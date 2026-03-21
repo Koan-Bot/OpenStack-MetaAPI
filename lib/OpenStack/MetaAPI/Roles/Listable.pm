@@ -22,16 +22,37 @@ sub _list {
         my $extra_filters =
           $self->api_specs()->query_filters_for('/get', $uri, $caller_args);
 
+        my $attribute = $extra[0];
+        my $opts = {};
         if ($extra_filters) {
             if (scalar @extra == 1) {
-                push @extra, {};
+                $opts = {};
             } elsif (scalar @extra > 1) {
                 die "Too many args when calling _list for all...";
             }
-            $extra[-1] = {%{$extra[-1]}, %$extra_filters};
+            $opts = {%$opts, %$extra_filters};
+        } elsif (scalar @extra > 1) {
+            $opts = $extra[-1] // {};
         }
 
-        @all = $self->client->all($uri, @extra);
+        my $path = $uri;
+        while (defined $path) {
+            my $result = $self->client->get($path, %$opts);
+
+            unless (defined $result->{$attribute}) {
+                my $keys = join(', ', sort keys %$result);
+                die "Response from $path does not contain attribute "
+                  . "'$attribute', possible options are $keys";
+            }
+
+            push @all, @{$result->{$attribute}};
+
+            $path = _extract_next_link($result, $attribute, $self->client->endpoint);
+
+            # only pass query opts on the first request; subsequent pages
+            # carry their own query string in the next link URL
+            $opts = {};
+        }
     }
 
     my @args = @$caller_args;
@@ -72,6 +93,51 @@ sub _list {
 
     # return a list
     return @all;
+}
+
+# Extract the next page URL from an OpenStack paginated response.
+# Supports three pagination styles:
+#   1. <attribute>_links: [ {rel:"next", href:"..."} ]  (Nova, Neutron)
+#   2. links: { next: "..." }                           (Keystone)
+#   3. next: "..."                                      (Glance)
+sub _extract_next_link {
+    my ($result, $attribute, $endpoint) = @_;
+
+    my $raw;
+
+    # Style 1: <attribute>_links array (e.g. servers_links, networks_links)
+    my $links_key = "${attribute}_links";
+    if (ref $result->{$links_key} eq 'ARRAY') {
+        for my $link (@{$result->{$links_key}}) {
+            if (ref $link eq 'HASH' && ($link->{rel} // '') eq 'next') {
+                $raw = $link->{href};
+                last;
+            }
+        }
+        return unless defined $raw;
+    }
+
+    # Style 2: links hash with next key (Keystone)
+    if (!defined $raw && ref $result->{links} eq 'HASH' && defined $result->{links}{next}) {
+        $raw = $result->{links}{next};
+    }
+
+    # Style 3: top-level next key (Glance)
+    $raw //= $result->{next};
+
+    return unless defined $raw;
+
+    # Normalize: strip the endpoint prefix from absolute URLs so the client
+    # doesn't double-prepend it (client->get() always prepends the endpoint)
+    if (defined $endpoint && $raw =~ m{^https?://}) {
+        # strip trailing slash from endpoint for matching
+        (my $base = $endpoint) =~ s{/+$}{};
+        if ($raw =~ s{^\Q$base\E}{}) {
+            # $raw is now a relative path like /servers?marker=...
+        }
+    }
+
+    return $raw;
 }
 
 1;
