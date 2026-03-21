@@ -1,0 +1,16 @@
+requires 'OpenStack::Client', '1.0006';
+requires 'YAML::XS';
+requires 'JSON';
+requires 'Moo';
+requires 'Moo::Role';
+
+on 'test' => sub {
+    requires 'Test2::Bundle::Extended';
+    requires 'Test2::Tools::Explain';
+    requires 'Test2::Plugin::NoWarnings';
+    requires 'Test::MockModule', '0.16';
+    requires 'File::Temp';
+    requires 'HTTP::Request';
+    requires 'LWP::UserAgent';
+    requires 'URI::Encode';
+};
