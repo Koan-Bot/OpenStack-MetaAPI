@@ -59,6 +59,8 @@ sub image_from_uid {
     my ($self, $uid) = @_;
 
     die "image_from_uid: uid is required" unless defined $uid;
+    die "Invalid UUID format '$uid' - expected 8-4-4-4-12 hex format"
+        unless $uid =~ m{^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$}i;
 
     my $uri = $self->root_uri('/images/' . $uid);
 

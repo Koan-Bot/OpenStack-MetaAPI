@@ -36,17 +36,17 @@ my $SERVER_NAME = 'testsuite OpenStack::MetaAPI';
     );
 
     mock_get_request(
-        'http://127.0.0.1:8774/v2.1/servers/000000-1111-22222-33333-444444',
+        'http://127.0.0.1:8774/v2.1/servers/00000000-1111-2222-3333-444444444444',
         application_json(json_servers_id()),
     );
 
     mock_get_request(
-        'http://127.0.0.1:9696/v2.0/ports?device_id=000000-1111-22222-33333-444444',
+        'http://127.0.0.1:9696/v2.0/ports?device_id=00000000-1111-2222-3333-444444444444',
         application_json(json_for_ports_device_id_unused()),
     );
 
     mock_delete_request(
-        'http://127.0.0.1:8774/v2.1/servers/000000-1111-22222-33333-444444',
+        'http://127.0.0.1:8774/v2.1/servers/00000000-1111-2222-3333-444444444444',
         txt_plain("ok delete server"),
     );
 
@@ -57,7 +57,7 @@ my $SERVER_NAME = 'testsuite OpenStack::MetaAPI';
     }
 
     mock_get_request(
-        'http://127.0.0.1:9696/v2.0/ports?device_id=000000-1111-22222-33333-444444',
+        'http://127.0.0.1:9696/v2.0/ports?device_id=00000000-1111-2222-3333-444444444444',
         application_json(json_for_ports_device_id_used()),
     );
 
@@ -67,7 +67,7 @@ my $SERVER_NAME = 'testsuite OpenStack::MetaAPI';
     );
 
     mock_delete_request(
-        'http://127.0.0.1:9696/v2.0/floatingips/ffff-1111-00000-aaaaaaa-777777',
+        'http://127.0.0.1:9696/v2.0/floatingips/ffff1111-0000-0aaa-aaaa-777777777777',
         txt_plain("ok delete floating ip ok"),
     );
 
@@ -148,7 +148,7 @@ sub json_for_floatingips {
             "fixed_ip_address": "10.0.0.3",
             "floating_ip_address": "172.24.4.228",
             "port_id": "d80b1a3b-4fc1-49f3-952e-1e2ab7081d8b",
-            "id": "ffff-1111-00000-aaaaaaa-777777",
+            "id": "ffff1111-0000-0aaa-aaaa-777777777777",
             "status": "ACTIVE",
             "port_details": {
                 "status": "ACTIVE",
@@ -177,7 +177,7 @@ sub json_for_ports_device_id_used {
             "created_at": "2016-03-08T20:19:41",
             "data_plane_status": null,
             "description": "",
-            "device_id": "000000-1111-22222-33333-444444",
+            "device_id": "00000000-1111-2222-3333-444444444444",
             "device_owner": "network:router_gateway",
             "dns_assignment": {
                 "hostname": "myport",
@@ -230,7 +230,7 @@ sub json_for_ports_device_id_unused {
             "created_at": "2016-03-08T20:19:41",
             "data_plane_status": null,
             "description": "",
-            "device_id": "0000-00000-0000-0000-0000",
+            "device_id": "00000000-0000-0000-0000-000000000000",
             "device_owner": "network:router_gateway",
             "dns_assignment": {
                 "hostname": "myport",
@@ -359,7 +359,7 @@ sub json_servers_id {
             "swap": 0,
             "vcpus": 1
         },
-        "id": "000000-1111-22222-33333-444444",
+        "id": "00000000-1111-2222-3333-444444444444",
         "image": {
             "id": "70a599e0-31e7-49b7-b260-868f441e862b",
             "links": [
@@ -393,7 +393,7 @@ sub json_servers {
 {
     "servers": [
         {
-            "id": "000000-1111-22222-33333-444444",
+            "id": "00000000-1111-2222-3333-444444444444",
             "links": [
                 {
                     "href": "http://openstack.example.com/v2/6f70656e737461636b20342065766572/servers/22c91117-08de-4894-9aa9-6ef382400985",
