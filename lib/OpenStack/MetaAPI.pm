@@ -101,31 +101,36 @@ sub create_vm {
     my $server_uid = $server->{id};
     die "Failed to create server" unless _looks_valid_id($server_uid);
 
-    # we are going to wait for 5 minutes fpr the server
-    my $wait_time_limit = $opts{wait_time_limit} // $self->create_max_timeout;
+    # wait_timeout / wait_time_limit (legacy) control the polling deadline
+    my $wait_timeout = $opts{wait_timeout} // $opts{wait_time_limit}
+      // $self->create_max_timeout;
+
+    # poll_interval controls how often we check server status
+    my $poll_interval = $opts{poll_interval} // $self->create_loop_sleep;
 
     my $now      = time();
-    my $max_time = $now + $wait_time_limit;
+    my $max_time = $now + $wait_timeout;
     my $server_is_ready;
 
     my $server_status;
+    my $last_status = 'UNKNOWN';
 
-    # TODO: maybe add one alarm...
     while (time() < $max_time) {
 
         $server_status = $self->server_from_uid($server_uid);
 
-        if (   ref $server_status
-            && $server_status->{status}
-            && $server_status->{status}
-            && lc($server_status->{status}) eq 'active') {
-            $server_is_ready = 1;
-            last;
+        if (ref $server_status && $server_status->{status}) {
+            $last_status = $server_status->{status};
+            if (lc($last_status) eq 'active') {
+                $server_is_ready = 1;
+                last;
+            }
         }
-        sleep $self->create_loop_sleep if $self->create_loop_sleep;
+        sleep $poll_interval if $poll_interval;
     }
 
-    die "Failed to create server: never came back as active"
+    die "Failed to create server $server_uid: "
+      . "status '$last_status' after ${wait_timeout}s timeout"
       unless $server_is_ready;
 
     # now add one IP to the server
@@ -241,6 +246,8 @@ Create one server from one image with one floating IP, wait for the server to be
             security_group => 'default',    # security group to use, by default use 'default'
             network => 'NETWORK_NAME or NETWORK_ID',    # network group to use
             network_for_floating_ip => 'NETWORK_NAME or NETWORK_ID',
+            wait_timeout  => 300,    # optional, seconds to wait for ACTIVE (default: 300)
+            poll_interval => 5,      # optional, seconds between status checks (default: 5)
         );
 
 =head2 $api->delete_server( $server_id );

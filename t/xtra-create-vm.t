@@ -88,8 +88,38 @@ ok $api, "got one api object" or die;
 
     like(
         dies { $create_vm->() },
-        qr{Failed to create server: never came back as active},
-        "server does not came back as active");
+        qr{Failed to create server aaaaa-bbbb-ccccc-dddd: status 'UNKNOWN' after 2s timeout},
+        "timeout die message includes server ID and last status");
+
+    note "attempt 2b: per-call wait_timeout and poll_interval";
+
+    {
+        # Reset to high defaults so only per-call opts apply
+        $api->create_max_timeout(600);
+        $api->create_loop_sleep(60);
+
+        mock_get_request(
+            'http://127.0.0.1:8774/v2.1/servers/aaaaa-bbbb-ccccc-dddd',
+            application_json(json_for_server()),
+        );
+
+        like(
+            dies {
+                $api->create_vm(
+                    name     => $SERVER_NAME,
+                    image    => $IMAGE_UID,
+                    flavor   => 'small',
+                    key_name => 'My SSH Key',
+                    network  => 'net1',
+                    network_for_floating_ip => $FLOATING_IP_NETWORK,
+                    wait_timeout  => 1,
+                    poll_interval => 0,
+                );
+            },
+            qr{Failed to create server aaaaa-bbbb-ccccc-dddd: status 'UNKNOWN' after 1s timeout},
+            "per-call wait_timeout and poll_interval override object defaults",
+        );
+    }
 
     note "attempt 3";
 
