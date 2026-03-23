@@ -100,9 +100,9 @@ sub root_uri {
 sub setup_method {
     my ($self, $name, $sub) = @_;
 
-    die                unless ref $self;
-    die "missing name" unless $name;
-    die                unless ref $sub eq 'CODE';
+    die "setup_method must be called as an instance method" unless ref $self;
+    die "setup_method: method name is required"            unless $name;
+    die "setup_method: second argument must be a CODE ref" unless ref $sub eq 'CODE';
 
     my $methods = $self->methods();
     die "Method '$name' already exists" if defined $methods->{$name};
