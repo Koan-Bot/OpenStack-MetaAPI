@@ -63,13 +63,3 @@ get:
         user_id: {}
         limit: {}
         marker: {}
-delete:
-  /server/{server_id}:
-    perl_api:
-      method: delete_server_from_uid
-      type: getfromid
-      uid: '{server_id}'
-    request:
-      path:
-        server_id:
-          required: 1
