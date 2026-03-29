@@ -71,19 +71,46 @@ get:
         fields: {}
         mac_learning_enabled:
           type: boolean
+post:
+  /v2.0/floatingips:
+    perl_api:
+      method: create_floating_ip
+      type: create
+      resource_key: floatingip
+    request:
+      body:
+        floating_network_id:
+          required: 1
+        tenant_id: {}
+        floating_ip_address: {}
+        port_id: {}
+        subnet_id: {}
+        description: {}
 put:
+  /v2.0/floatingips/{floatingip_id}:
+    perl_api:
+      method: update_floatingip
+      type: update
+      uid: '{floatingip_id}'
+      resource_key: floatingip
+    request:
+      path:
+        floatingip_id:
+          required: 1
+      body:
+        port_id: {}
+        description: {}
   /v2.0/ports/{port_id}:
     perl_api:
-      method: port_from_uid
-      type: getfromid
+      method: update_port
+      type: update
       uid: '{port_id}'
+      resource_key: port
     request:
       path:
         port_id:
           required: 1
       body:
-        port:
-          required: 1
         admin_state_up: {}
         allowed_address_pairs:
           type: array
@@ -99,3 +126,13 @@ put:
         dns_name: {}
         extra_dhcp_opts:
           type: array
+delete:
+  /v2.0/floatingips/{floatingip_id}:
+    perl_api:
+      method: delete_floatingip
+      type: remove
+      uid: '{floatingip_id}'
+    request:
+      path:
+        floatingip_id:
+          required: 1

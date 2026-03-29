@@ -30,12 +30,28 @@ sub get {
     return $self->specs()->{get}->{$route};
 }
 
-sub put {
-    die "must be implemented";
+sub post {
+    my ($self, $route) = @_;
+
+    $route = '/' . $route unless $route =~ m{^/};
+
+    return $self->specs()->{post}->{$route};
 }
 
-sub post {
-    die "must be implemented";
+sub put {
+    my ($self, $route) = @_;
+
+    $route = '/' . $route unless $route =~ m{^/};
+
+    return $self->specs()->{put}->{$route};
+}
+
+sub delete {
+    my ($self, $route) = @_;
+
+    $route = '/' . $route unless $route =~ m{^/};
+
+    return $self->specs()->{delete}->{$route};
 }
 
 sub query_filters_for {
@@ -109,6 +125,44 @@ sub setup_api_methods_for_service {
                     my ($self, @args) = @_;
                     return $self->_list([$route, $listable_key], \@args);
                 };
+            } elsif ($type eq 'create') {
+                my $resource_key = $perl_api->{resource_key}
+                  or die "resource_key is missing $from_txt";
+                $code = sub {
+                    my ($self, %opts) = @_;
+                    my $uri = _resolve_uri($self, $route);
+                    my $output =
+                      $self->post($uri, {$resource_key => {%opts}});
+                    return $output->{$resource_key}
+                      if ref $output && $output->{$resource_key};
+                    return $output;
+                };
+            } elsif ($type eq 'update') {
+                my $token = $perl_api->{uid}
+                  or die "uid is missing $from_txt";
+                my $resource_key = $perl_api->{resource_key}
+                  or die "resource_key is missing $from_txt";
+                $code = sub {
+                    my ($self, $uid, %opts) = @_;
+                    my $r = $route;
+                    $r =~ s[\Q$token\E][$uid]g;
+                    my $uri = _resolve_uri($self, $r);
+                    my $output =
+                      $self->put($uri, {$resource_key => {%opts}});
+                    return $output->{$resource_key}
+                      if ref $output && $output->{$resource_key};
+                    return $output;
+                };
+            } elsif ($type eq 'remove') {
+                my $token = $perl_api->{uid}
+                  or die "uid is missing $from_txt";
+                $code = sub {
+                    my ($self, $uid) = @_;
+                    my $r = $route;
+                    $r =~ s[\Q$token\E][$uid]g;
+                    my $uri = _resolve_uri($self, $r);
+                    return $self->delete($uri);
+                };
             } else {
                 die "Unknown type '$type' $from_txt";
             }
@@ -118,6 +172,16 @@ sub setup_api_methods_for_service {
     }
 
     return;
+}
+
+# Resolve a spec route to a URI, applying root_uri only when the route
+# does not already contain a version prefix (e.g. /v2.0/).
+# This mirrors the convention used by _list() for listable routes.
+sub _resolve_uri {
+    my ($service, $uri) = @_;
+
+    return $uri if $uri =~ m{^/v}i;
+    return $service->root_uri($uri);
 }
 
 1;

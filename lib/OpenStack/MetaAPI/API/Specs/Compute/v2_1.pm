@@ -63,11 +63,31 @@ get:
         user_id: {}
         limit: {}
         marker: {}
+post:
+  /servers:
+    perl_api:
+      method: create_server
+      type: create
+      resource_key: server
+    request:
+      body:
+        name:
+          required: 1
+        imageRef:
+          required: 1
+        flavorRef:
+          required: 1
+        networks: {}
+        key_name: {}
+        security_groups: {}
+        user_data: {}
+        availability_zone: {}
+        metadata: {}
 delete:
-  /server/{server_id}:
+  /servers/{server_id}:
     perl_api:
       method: delete_server_from_uid
-      type: getfromid
+      type: remove
       uid: '{server_id}'
     request:
       path:

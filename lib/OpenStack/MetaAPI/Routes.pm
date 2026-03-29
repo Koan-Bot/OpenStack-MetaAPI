@@ -108,6 +108,12 @@ security_groups:
   service: network
 create_floating_ip:
   service: network
+update_floatingip:
+  service: network
+update_port:
+  service: network
+delete_server_from_uid:
+  service: compute
 image_from_uid:
   service: images
 image_from_name:

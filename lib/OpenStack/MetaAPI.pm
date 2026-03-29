@@ -131,8 +131,8 @@ sub create_vm {
     # now add one IP to the server
     {
         # create a floating IP
-        my $floating_ip =
-          $self->create_floating_ip($network_for_floating_ip->{id});
+        my $floating_ip = $self->create_floating_ip(
+            floating_network_id => $network_for_floating_ip->{id});
 
         die "Failed to create floating ip"
           unless ref $floating_ip && _looks_valid_id($floating_ip->{id});

@@ -44,15 +44,7 @@ sub delete_server {
     return $self->delete($uri);
 }
 
-#  FIXME should be generated from specs
-sub create_server {
-    my ($self, %opts) = @_;
-
-    my $uri = $self->root_uri('/servers/');
-    my $output = $self->post($uri, {server => {%opts}});
-    return $output->{server} if ref $output;
-    return $output;
-}
+# create_server is now generated from specs (type: create)
 
 ### helpers
 
