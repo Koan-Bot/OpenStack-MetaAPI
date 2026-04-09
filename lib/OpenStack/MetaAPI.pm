@@ -104,6 +104,9 @@ sub create_vm {
     }
     $image //= $self->image_from_name($opts{image});
 
+    die "Cannot find image for id/name '$opts{image}'"
+      unless ref $image eq 'HASH' && _looks_valid_id($image->{id});
+
     my $security_group =
       $self->look_by_id_or_name(security_groups => $opts{security_group});
 

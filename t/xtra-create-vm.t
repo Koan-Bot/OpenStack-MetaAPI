@@ -60,9 +60,26 @@ ok $api, "got one api object" or die;
         qr{Cannot find 'networks' for id/name '$FLOATING_IP_NETWORK'},
         "fail when using an unkown network");
 
-    note "attempt 2";
+    note "attempt: image not found";
 
     $FLOATING_IP_NETWORK = 'net2';
+
+    # mock image lookup to return empty results
+    mock_get_request(
+        'http://127.0.0.1:9292/v2/images/170fafa5-1329-44a3-9c27-9bb77b77206d',
+        application_json('{}'),
+    );
+    mock_get_request(
+        'http://127.0.0.1:9292/v2/images',
+        application_json('{"images": []}'),
+    );
+
+    like(
+        dies { $create_vm->() },
+        qr{Cannot find image for id/name '$IMAGE_UID'},
+        "fail when image is not found");
+
+    note "attempt: server creation";
 
     mock_get_request(
         'http://127.0.0.1:9292/v2/images/170fafa5-1329-44a3-9c27-9bb77b77206d',
@@ -476,41 +493,25 @@ JSON
 }
 
 sub json_imageid {
+
+    # Glance v2 API returns a flat image object (not wrapped in {image: ...})
     return <<'JSON';
 {
-    "image": {
-        "OS-DCF:diskConfig": "AUTO",
-        "OS-EXT-IMG-SIZE:size": "74185822",
-        "created": "2011-01-01T01:02:03Z",
-        "id": "70a599e0-31e7-49b7-b260-868f441e862b",
-        "links": [
-            {
-                "href": "http://openstack.example.com/v2/6f70656e737461636b20342065766572/images/70a599e0-31e7-49b7-b260-868f441e862b",
-                "rel": "self"
-            },
-            {
-                "href": "http://openstack.example.com/6f70656e737461636b20342065766572/images/70a599e0-31e7-49b7-b260-868f441e862b",
-                "rel": "bookmark"
-            },
-            {
-                "href": "http://glance.openstack.example.com/images/70a599e0-31e7-49b7-b260-868f441e862b",
-                "rel": "alternate",
-                "type": "application/vnd.openstack.image"
-            }
-        ],
-        "metadata": {
-            "architecture": "x86_64",
-            "auto_disk_config": "True",
-            "kernel_id": "nokernel",
-            "ramdisk_id": "nokernel"
-        },
-        "minDisk": 0,
-        "minRam": 0,
-        "name": "fakeimage7",
-        "progress": 100,
-        "status": "ACTIVE",
-        "updated": "2011-01-01T01:02:03Z"
-    }
+    "id": "70a599e0-31e7-49b7-b260-868f441e862b",
+    "name": "fakeimage7",
+    "status": "active",
+    "visibility": "public",
+    "min_disk": 0,
+    "min_ram": 0,
+    "size": 74185822,
+    "container_format": "bare",
+    "disk_format": "raw",
+    "created_at": "2011-01-01T01:02:03Z",
+    "updated_at": "2011-01-01T01:02:03Z",
+    "schema": "/v2/schemas/image",
+    "self": "/v2/images/70a599e0-31e7-49b7-b260-868f441e862b",
+    "file": "/v2/images/70a599e0-31e7-49b7-b260-868f441e862b/file",
+    "tags": []
 }
 JSON
 }
