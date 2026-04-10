@@ -31,7 +31,7 @@ sub LoadDataFrom {
     my $data;
     {
         local $/;
-        my $fh = eval '\*' . $pkg . '::DATA';
+        my $fh = do { no strict 'refs'; \*{"${pkg}::DATA"} };
         $data = <$fh>;
     }
 
