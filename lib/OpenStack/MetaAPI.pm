@@ -144,12 +144,12 @@ sub create_vm {
     my $server_uid = $server->{id};
     die "Failed to create server" unless _looks_valid_id($server_uid);
 
-    # we are going to wait for 5 minutes fpr the server
+    # we are going to wait for 5 minutes for the server
     my $wait_time_limit = $opts{wait_time_limit} // $self->create_max_timeout;
 
     my $now      = time();
     my $max_time = $now + $wait_time_limit;
-    my $server_is_ready;
+    my $server_is_ready = 0;
 
     my $server_status;
 

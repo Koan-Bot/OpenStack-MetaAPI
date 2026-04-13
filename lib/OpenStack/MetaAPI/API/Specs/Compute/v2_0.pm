@@ -22,6 +22,7 @@ get:
     perl_api:
       method: server_from_uid
       type: getfromid
+      uid: '{server_id}'
     request:
       path:
         server_id:
@@ -67,6 +68,7 @@ delete:
     perl_api:
       method: delete_server_from_uid
       type: getfromid
+      uid: '{server_id}'
     request:
       path:
         server_id:
