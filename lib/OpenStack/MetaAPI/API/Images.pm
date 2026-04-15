@@ -85,9 +85,10 @@ sub image_from_name {
     return unless ref $images;
 
     if (scalar @$images > 1) {
-        warn
-          "image_from_name: more than one image sharing the same name '$name'";
-        return $images;
+        my @ids = map { $_->{id} // 'unknown' } @$images;
+        die "image_from_name: multiple images found for name '$name'"
+          . " (ids: " . join(', ', @ids) . ")."
+          . " Use image_from_uid to select a specific image";
     }
 
     return $images->[0];
