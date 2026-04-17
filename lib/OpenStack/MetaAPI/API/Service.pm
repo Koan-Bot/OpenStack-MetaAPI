@@ -84,7 +84,7 @@ sub root_uri {
     return $uri if $uri =~ m{^v};    # already contains a version
 
     # endpoint already contains a version
-    return if $self->endpoint && $self->endpoint =~ m{:[\d]/v}a;
+    return $uri if $self->endpoint && $self->endpoint =~ m{/v\d}a;
 
     # append our prefix to the endpoint
     if ($self->version_prefix) {
