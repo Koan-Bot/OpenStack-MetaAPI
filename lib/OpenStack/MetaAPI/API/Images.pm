@@ -73,13 +73,3 @@ sub image_from_name {
 ### helpers
 
 1;
-
-__DATA__
----
-keypairs:
-  listable: 1
-flavors:
-  listable: 1
-
-
-

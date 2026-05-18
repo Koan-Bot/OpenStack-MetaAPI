@@ -58,7 +58,7 @@ get:
         mac_address: {}
         name: {}
         network_id: {}
-        prokect_id: {}
+        project_id: {}
         revision_number: {}
         sort_dir: {}
         sort_key: {}

@@ -38,6 +38,20 @@ get:
         hostname: {}
         image: {}
         ip: {}
+  /flavors:
+    perl_api:
+      method: flavors
+      type: listable
+      listable_key: 'flavors'
+    request:
+      query:
+        sort_key: {}
+        sort_dir: {}
+        limit: {}
+        marker: {}
+        minDisk: {}
+        minRam: {}
+        isPublic: {}
   /os-keypairs:
     perl_api:
       method: keypairs
