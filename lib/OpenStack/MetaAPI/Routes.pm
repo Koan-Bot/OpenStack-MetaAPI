@@ -112,6 +112,8 @@ image_from_uid:
   service: images
 image_from_name:
   service: images
+list_images:
+  service: images
 limits:
   service: compute
 server_action:
