@@ -203,6 +203,22 @@ ok $api, "got one api object" or die;
 
     ok !exists $posted->{server}{block_device_mapping_v2},
       "and a pass-through nobody asked for is not sent at all";
+
+    note "a cloud with no tenant network to escape from";
+
+    # Where the only network is external and shared, a server on it gets a
+    # routable address directly and there is no floating IP to attach.  Such a
+    # cloud could not be built on at all while this argument was required.
+    my $no_float = $api->create_vm(
+        name    => $SERVER_NAME,
+        image   => $IMAGE_UID,
+        flavor  => 'small',
+        network => 'net1',
+    );
+
+    ok $no_float, "a server is created without a floating network";
+    ok !exists $no_float->{floating_ip_address},
+      "and no floating IP was attached, because none was asked for";
 }
 
 done_testing;

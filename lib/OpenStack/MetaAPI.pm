@@ -73,8 +73,6 @@ sub create_vm {
     die "'image' name or id is required by create_vm"
       unless defined $opts{image};
     die "'name' field is required by create_vm" unless defined $opts{name};
-    die "'network_for_floating_ip' field is required by create_vm"
-      unless defined $opts{network_for_floating_ip};
 
     $opts{security_group} //=
       'default';    # optional argument fallback to 'default'
@@ -85,9 +83,14 @@ sub create_vm {
     # get the network by id or name
     my $network = $self->look_by_id_or_name(networks => $opts{network});
 
-    # get the network used to add the floating up later
-    my $network_for_floating_ip =
-      $self->look_by_id_or_name(networks => $opts{network_for_floating_ip});
+    # Optional: not every cloud has a tenant network to escape from.  Where the
+    # only network is external and shared, a server on it is given a routable
+    # address directly -- reported as 'fixed' -- and there is no floating IP to
+    # attach.  Requiring one made such a cloud impossible to build on at all.
+    my $network_for_floating_ip;
+    $network_for_floating_ip =
+      $self->look_by_id_or_name(networks => $opts{network_for_floating_ip})
+      if defined $opts{network_for_floating_ip};
 
     my $image;
     if (_looks_valid_id($opts{image})) {
@@ -163,7 +166,7 @@ sub create_vm {
       unless $server_is_ready;
 
     # now add one IP to the server
-    {
+    if ($network_for_floating_ip) {
         # create a floating IP
         my $floating_ip =
           $self->create_floating_ip($network_for_floating_ip->{id});
