@@ -16,6 +16,7 @@ use Test::OpenStack::MetaAPI qw{:all};
 use Test::OpenStack::MetaAPI::Auth qw{:all};
 
 use JSON;
+use MIME::Base64 ();
 
 mock_lwp_useragent();
 
@@ -160,6 +161,48 @@ ok $api, "got one api object" or die;
 
     }, "create a vm";
 
+    note "what actually gets sent to Nova";
+
+    # Re-registered as a sub so the request body can be captured.  For a field
+    # the API encodes on the caller's behalf, the encoding is the behaviour, and
+    # asserting on the response would not exercise it at all.
+    my $posted;
+    mock_post_request(
+        'http://127.0.0.1:8774/v2.1/servers',
+        sub {
+            my ($request) = @_;
+            $posted = decode_json($request->content);
+            return {code => 200, msg => 'created', %{application_json(json_create_server())}};
+        },
+    );
+
+    my $cloud_config = "#cloud-config\nhostname: vm.example.com\n";
+
+    $api->create_vm(
+        name                    => $SERVER_NAME,
+        image                   => $IMAGE_UID,
+        flavor                  => 'small',
+        key_name                => 'My SSH Key',
+        network                 => 'net1',
+        network_for_floating_ip => $FLOATING_IP_NETWORK,
+        user_data               => $cloud_config,
+        availability_zone       => 'nova',
+        metadata                => {domain => 'vm.example.com'},
+    );
+
+    ok $posted, "the create request was captured" or return;
+
+    is MIME::Base64::decode_base64($posted->{server}{user_data}), $cloud_config,
+      "user_data arrives base64 encoded, which is the only form Nova takes";
+    is $posted->{server}{availability_zone}, 'nova', "availability_zone is passed through";
+    is $posted->{server}{metadata}, {domain => 'vm.example.com'}, "and metadata";
+    is $posted->{server}{key_name}, 'My SSH Key', "alongside what already worked";
+
+    is $posted->{server}{security_groups}, [{name => 'default'}],
+      "the security group goes by name, which is what the field is";
+
+    ok !exists $posted->{server}{block_device_mapping_v2},
+      "and a pass-through nobody asked for is not sent at all";
 }
 
 done_testing;

@@ -3,6 +3,7 @@ package OpenStack::MetaAPI;
 use strict;
 use warnings;
 
+use MIME::Base64              ();
 use OpenStack::Client::Auth    ();
 use OpenStack::MetaAPI::Routes ();
 use Scalar::Util qw/weaken/;
@@ -102,13 +103,31 @@ sub create_vm {
         push @extra, (key_name => $opts{key_name});
     }
 
+    # Nova wants user_data base64 encoded, and every caller has cloud-config
+    # rather than base64, so encode it here instead of making each of them
+    # remember to.  Without this there is no way to hand a new server its
+    # cloud-init payload at all, which is most of the point of creating one.
+    if (defined $opts{user_data} && length $opts{user_data}) {
+        push @extra,
+          (user_data => MIME::Base64::encode_base64($opts{user_data}, ''));
+    }
+
+    # Pass-throughs.  Each is a plain server-create field that had no way of
+    # being set: which availability zone to build in, the metadata a later
+    # lookup finds the server by, and the volumes it boots or carries.
+    foreach my $field (qw{availability_zone metadata block_device_mapping_v2}) {
+        push @extra, ($field => $opts{$field}) if defined $opts{$field};
+    }
+
     my $server = $self->create_server(
         name            => $opts{name},
         imageRef        => $image->{id},
         flavorRef       => $flavor->{id},
         min_count       => 1,
         max_count       => 1,
-        security_groups => [{name => $security_group->{id}}],
+        # By name, which is what the field is.  This passed the id, which
+        # some clouds resolve anyway and others do not.
+        security_groups => [{name => $security_group->{name} // $security_group->{id}}],
         networks        => [{uuid => $network->{id}}],
         @extra,
     );
