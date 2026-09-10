@@ -43,6 +43,21 @@ around BUILDARGS => sub {
 
     die "Missing arguments to create Auth object" unless scalar @args;
 
+    # A caller that has already built its auth object hands it straight over.
+    #
+    # Keystone can be talked to by methods OpenStack::Client::Auth does not
+    # implement -- an application credential, for one -- and the only way to use
+    # one is to construct the auth object yourself.  Building a fresh one from
+    # the args regardless left no way to do that, so such a caller could not use
+    # this module at all.
+    #
+    # Normal construction is new($endpoint, %args), whose first argument is a
+    # URL rather than a reference, so it does not match this.
+    return $args[0]
+      if scalar @args == 1
+      && ref $args[0] eq 'HASH'
+      && ref $args[0]->{'auth'};
+
     # automagically build the OpenStack::Client::Auth from existing args
     return {auth => OpenStack::Client::Auth->new(@args)};
 };
