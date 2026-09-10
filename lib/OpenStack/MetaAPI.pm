@@ -6,7 +6,7 @@ use warnings;
 use MIME::Base64              ();
 use OpenStack::Client::Auth    ();
 use OpenStack::MetaAPI::Routes ();
-use Scalar::Util qw/weaken/;
+use Scalar::Util qw/blessed weaken/;
 
 use Moo;
 
@@ -54,10 +54,16 @@ around BUILDARGS => sub {
     #
     # Normal construction is new($endpoint, %args), whose first argument is a
     # URL rather than a reference, so it does not match this.
+    #
+    # The 'auth' has to be a blessed object, not merely a reference: a
+    # clouds.yaml cloud entry is a plain hashref with an 'auth' key of its own
+    # (auth_url, username, password, ...), and letting that through would store
+    # an unblessed hash as the auth object -- construction would succeed and the
+    # first delegated call would die far from here on an unblessed reference.
     return $args[0]
       if scalar @args == 1
       && ref $args[0] eq 'HASH'
-      && ref $args[0]->{'auth'};
+      && blessed($args[0]->{'auth'});
 
     # automagically build the OpenStack::Client::Auth from existing args
     return {auth => OpenStack::Client::Auth->new(@args)};

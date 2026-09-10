@@ -20,8 +20,8 @@ use JSON;
 mock_lwp_useragent();
 
 # Stands in for an auth object somebody else built.  It only has to satisfy the
-# 'services' the api delegates, and to be a reference, which is what tells
-# BUILDARGS this is an auth object rather than an endpoint URL.
+# 'services' the api delegates, and to be a blessed object, which is what tells
+# BUILDARGS this is an auth object rather than an endpoint URL or a config hash.
 {
 
     package Test::PrebuiltAuth;
@@ -76,5 +76,14 @@ like(
     dies { OpenStack::MetaAPI->new({debug => 1}) },
     qr/No OpenStack tenant name provided/,
     "a hashref without an auth object still goes through OpenStack::Client::Auth");
+
+# A clouds.yaml cloud entry is a plain hashref whose 'auth' is itself an
+# unblessed hash (auth_url, username, password, ...).  That must not be
+# mistaken for a prebuilt auth object: it has to fall through and build a real
+# OpenStack::Client::Auth, which dies on the details it was not given.
+like(
+    dies { OpenStack::MetaAPI->new({auth => {username => 'x'}}) },
+    qr/No OpenStack tenant name provided/,
+    "a clouds.yaml-shaped hash with an unblessed auth is not taken as the auth object");
 
 done_testing;
