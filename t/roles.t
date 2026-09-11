@@ -162,10 +162,10 @@ mock_lwp_useragent();
     my $api = get_api_object(use_env => 0);
     ok $api, "got api object for getfromid test" or die;
 
-    my $server_uid = 'abc-def-123';
+    my $server_uid = 'abcdef01-2345-6789-abcd-ef0123456789';
     mock_get_request(
         "http://127.0.0.1:8774/v2.1/servers/$server_uid",
-        application_json('{"server": {"id": "abc-def-123", "name": "my-server", "status": "ACTIVE"}}'),
+        application_json('{"server": {"id": "abcdef01-2345-6789-abcd-ef0123456789", "name": "my-server", "status": "ACTIVE"}}'),
     );
 
     my $server = $api->server_from_uid($server_uid);
