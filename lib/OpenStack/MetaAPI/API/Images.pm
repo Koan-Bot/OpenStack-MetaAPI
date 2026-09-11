@@ -58,7 +58,7 @@ sub list_images {
 sub image_from_uid {
     my ($self, $uid) = @_;
 
-    die unless defined $uid;
+    die "image_from_uid: uid is required" unless defined $uid;
 
     my $uri = $self->root_uri('/images/' . $uid);
 
@@ -70,7 +70,7 @@ sub image_from_name {
 
     # v2/images?name=in:"glass,%20darkly"
 
-    die unless defined $name;
+    die "image_from_name: name is required" unless defined $name;
 
     my $uri = $self->root_uri('/images');
 
