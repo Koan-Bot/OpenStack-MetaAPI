@@ -259,7 +259,7 @@ sub json_for_ports_device_id {
             "ip_allocation": "immediate",
             "mac_address": "fa:16:3e:58:42:ed",
             "name": "",
-            "network_id": "70c1db1f-b701-45bd-96e0-a313ee3430b3",
+            "network_id": "d32019d3-bc6e-4319-9c1d-6722fc136a22",
             "project_id": "",
             "revision_number": 1,
             "security_groups": [],

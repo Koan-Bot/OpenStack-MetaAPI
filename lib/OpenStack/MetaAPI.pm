@@ -193,7 +193,8 @@ sub create_vm {
 
         # add the floating IP to the server
         my $added =
-          $self->add_floating_ip_to_server($floating_ip->{id}, $server_uid);
+          $self->add_floating_ip_to_server($floating_ip->{id}, $server_uid,
+            network_id => $network->{id});
 
         $server_status->{floating_ip_address} =
           $floating_ip->{floating_ip_address};
