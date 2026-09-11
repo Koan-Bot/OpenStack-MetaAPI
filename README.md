@@ -4,7 +4,7 @@ OpenStack::MetaAPI - Perl5 OpenStack API abstraction on top of OpenStack::Client
 
 # VERSION
 
-version 0.003
+version 0.004
 
 # SYNOPSIS
 
@@ -108,7 +108,7 @@ SKIP: {
 OpenStack::MetaAPI
 
 Using OpenStack::MetaAPI you can call routes from any service directly on the main object.
-Helpers are defined from the specs defined https://developer.openstack.org/api-guide/quick-start/#current-api-versions
+Helpers are defined from the [specs](https://docs.openstack.org/api-quick-start/#current-api-versions) defined.
 
 Currently only a very small part of the specs have been imported to this project.
 
@@ -120,7 +120,7 @@ Feel free to report issues to the Bug Tracker or contribute.
 ## new( \[ Arguments for OpenStack::Client::Auth \] )
 
 Create one OpenStack::MetaAPI object.
-For now all arguments passed to `new` are used to create one [OpenStack::Client::Auth](https://metacpan.org/pod/OpenStack::Client::Auth).
+For now all arguments passed to `new` are used to create one [OpenStack::Client::Auth](https://metacpan.org/pod/OpenStack%3A%3AClient%3A%3AAuth).
 
 ## $api->flavors( \[ %filter \] )
 
@@ -168,9 +168,9 @@ Delete a server from its id. Note floating IP linked to the server are also dele
 
 # SEE ALSO
 
-This module is a wrapper around [OpenStack::Client](https://metacpan.org/pod/OpenStack::Client) and [OpenStack::Client::Auth](https://metacpan.org/pod/OpenStack::Client::Auth)
+This module is a wrapper around [OpenStack::Client](https://metacpan.org/pod/OpenStack%3A%3AClient) and [OpenStack::Client::Auth](https://metacpan.org/pod/OpenStack%3A%3AClient%3A%3AAuth)
 
-- [OpenStack::Client](https://metacpan.org/pod/OpenStack::Client) - OpenStack API client.
+- [OpenStack::Client](https://metacpan.org/pod/OpenStack%3A%3AClient) - OpenStack API client.
 
 # TODO
 
