@@ -50,6 +50,10 @@ OpenStack::MetaAPI Changes
     die with a clear message. A malformed id used to reach OpenStack and
     come back as a cryptic 404 or 400. _looks_valid_id() stays loose on
     purpose: it only routes id-versus-name, and flavors use numeric ids.
+  - image_from_name(): die, listing the duplicate ids, when more than one
+    image shares a name. It used to return an arrayref where callers such
+    as create_vm expected a hashref, so $image->{id} read as undef and the
+    failure surfaced later as a confusing API error.
   - Replace bare die calls with messages naming the method and the missing
     argument.
 
