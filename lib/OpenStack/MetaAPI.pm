@@ -3,9 +3,10 @@ package OpenStack::MetaAPI;
 use strict;
 use warnings;
 
+use MIME::Base64              ();
 use OpenStack::Client::Auth    ();
 use OpenStack::MetaAPI::Routes ();
-use Scalar::Util qw/weaken/;
+use Scalar::Util qw/blessed weaken/;
 
 use Moo;
 
@@ -43,6 +44,27 @@ around BUILDARGS => sub {
 
     die "Missing arguments to create Auth object" unless scalar @args;
 
+    # A caller that has already built its auth object hands it straight over.
+    #
+    # Keystone can be talked to by methods OpenStack::Client::Auth does not
+    # implement -- an application credential, for one -- and the only way to use
+    # one is to construct the auth object yourself.  Building a fresh one from
+    # the args regardless left no way to do that, so such a caller could not use
+    # this module at all.
+    #
+    # Normal construction is new($endpoint, %args), whose first argument is a
+    # URL rather than a reference, so it does not match this.
+    #
+    # The 'auth' has to be a blessed object, not merely a reference: a
+    # clouds.yaml cloud entry is a plain hashref with an 'auth' key of its own
+    # (auth_url, username, password, ...), and letting that through would store
+    # an unblessed hash as the auth object -- construction would succeed and the
+    # first delegated call would die far from here on an unblessed reference.
+    return $args[0]
+      if scalar @args == 1
+      && ref $args[0] eq 'HASH'
+      && blessed($args[0]->{'auth'});
+
     # automagically build the OpenStack::Client::Auth from existing args
     return {auth => OpenStack::Client::Auth->new(@args)};
 };
@@ -57,8 +79,6 @@ sub create_vm {
     die "'image' name or id is required by create_vm"
       unless defined $opts{image};
     die "'name' field is required by create_vm" unless defined $opts{name};
-    die "'network_for_floating_ip' field is required by create_vm"
-      unless defined $opts{network_for_floating_ip};
 
     $opts{security_group} //=
       'default';    # optional argument fallback to 'default'
@@ -69,9 +89,14 @@ sub create_vm {
     # get the network by id or name
     my $network = $self->look_by_id_or_name(networks => $opts{network});
 
-    # get the network used to add the floating up later
-    my $network_for_floating_ip =
-      $self->look_by_id_or_name(networks => $opts{network_for_floating_ip});
+    # Optional: not every cloud has a tenant network to escape from.  Where the
+    # only network is external and shared, a server on it is given a routable
+    # address directly -- reported as 'fixed' -- and there is no floating IP to
+    # attach.  Requiring one made such a cloud impossible to build on at all.
+    my $network_for_floating_ip;
+    $network_for_floating_ip =
+      $self->look_by_id_or_name(networks => $opts{network_for_floating_ip})
+      if defined $opts{network_for_floating_ip};
 
     my $image;
     if (_looks_valid_id($opts{image})) {
@@ -87,13 +112,31 @@ sub create_vm {
         push @extra, (key_name => $opts{key_name});
     }
 
+    # Nova wants user_data base64 encoded, and every caller has cloud-config
+    # rather than base64, so encode it here instead of making each of them
+    # remember to.  Without this there is no way to hand a new server its
+    # cloud-init payload at all, which is most of the point of creating one.
+    if (defined $opts{user_data} && length $opts{user_data}) {
+        push @extra,
+          (user_data => MIME::Base64::encode_base64($opts{user_data}, ''));
+    }
+
+    # Pass-throughs.  Each is a plain server-create field that had no way of
+    # being set: which availability zone to build in, the metadata a later
+    # lookup finds the server by, and the volumes it boots or carries.
+    foreach my $field (qw{availability_zone metadata block_device_mapping_v2}) {
+        push @extra, ($field => $opts{$field}) if defined $opts{$field};
+    }
+
     my $server = $self->create_server(
         name            => $opts{name},
         imageRef        => $image->{id},
         flavorRef       => $flavor->{id},
         min_count       => 1,
         max_count       => 1,
-        security_groups => [{name => $security_group->{id}}],
+        # By name, which is what the field is.  This passed the id, which
+        # some clouds resolve anyway and others do not.
+        security_groups => [{name => $security_group->{name} // $security_group->{id}}],
         networks        => [{uuid => $network->{id}}],
         @extra,
     );
@@ -129,7 +172,7 @@ sub create_vm {
       unless $server_is_ready;
 
     # now add one IP to the server
-    {
+    if ($network_for_floating_ip) {
         # create a floating IP
         my $floating_ip =
           $self->create_floating_ip($network_for_floating_ip->{id});

@@ -27,7 +27,28 @@ either by its 'exact name' or its 'UID'
 sub images {
     my ($self, @args) = @_;
 
-    die "Please use image_from_uid image_from_name";
+    die "Please use image_from_uid, image_from_name or list_images";
+}
+
+# Every image matching %query, pagination followed.
+#
+# The warning above is about listing images *unfiltered*, which really can take
+# fifty requests -- but there was no way to ask for a filtered list either, and
+# some questions have no single-image answer.  "Which snapshots does this
+# instance have" is one: Glance holds them as ordinary images, and the only way
+# to find them is to ask for the ones matching.
+#
+# %query goes to Glance as request parameters, so the filtering happens there
+# rather than here: name, owner, visibility, status, and any image property --
+# Nova stamps its snapshots with image_type and instance_uuid, which is the
+# narrow way to ask that question.
+#
+# Pagination is OpenStack::Client's; all() follows the 'next' link until there
+# is not one.
+sub list_images {
+    my ($self, %query) = @_;
+
+    return $self->client->all($self->root_uri('/images'), 'images', \%query);
 }
 
 # API doc
