@@ -49,13 +49,13 @@ sub _list {
 
                     # can use a regexp as a filter
                     next
-                      unless $candidate->{$filter}
+                      unless defined $candidate->{$filter}
                       && $candidate->{$filter} =~ $opts{$filter};
                 } else {
 
                     # otherwise do one 'eq' check
                     next
-                      unless $candidate->{$filter}
+                      unless defined $candidate->{$filter}
                       && $candidate->{$filter} eq $opts{$filter};
                 }
 
