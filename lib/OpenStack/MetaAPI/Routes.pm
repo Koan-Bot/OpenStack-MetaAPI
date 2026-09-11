@@ -6,7 +6,6 @@ use warnings;
 use Moo;
 
 use OpenStack::MetaAPI::API ();
-use YAML::XS;
 
 use OpenStack::MetaAPI::Helpers::DataAsYaml;
 
