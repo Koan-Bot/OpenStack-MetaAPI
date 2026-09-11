@@ -66,7 +66,9 @@ sub BUILD_api_specs {    # load specs
     my $pkg =
       'OpenStack::MetaAPI::API::Specs::' . ucfirst($self->name) . '::' . $v;
 
-    my $load = eval qq{ require $pkg; 1 };
+    (my $file = $pkg) =~ s{::}{/}g;
+    $file .= '.pm';
+    my $load = eval { require $file; 1 };
     if ($load) {
         return $pkg->new();
     }
