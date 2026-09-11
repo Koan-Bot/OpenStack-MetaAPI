@@ -72,15 +72,10 @@ ok $api, "got one api object" or die;
       qr/'name' field is required/,
       "create_vm() without name gives useful error";
 
-    like dies {
-        $api->create_vm(
-            flavor  => 'small',
-            network => 'net1',
-            image   => 'img1',
-            name    => 'myvm')
-    },
-      qr/'network_for_floating_ip' field is required/,
-      "create_vm() without network_for_floating_ip gives useful error";
+    # 'network_for_floating_ip' is deliberately NOT checked here: it is an
+    # optional argument.  A cloud whose only network is external and shared
+    # hands the server a routable address directly, so there is no floating
+    # IP to attach.  See t/create-vm-no-floating-ip.t for that path.
 }
 
 # --- look_by_id_or_name error path ---
