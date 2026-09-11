@@ -42,7 +42,9 @@ OpenStack::MetaAPI Changes
   - Network v2 specs: fix the 'prokect_id' typo, which made project_id
     filters silently fall back to client-side filtering.
   - Compute v2_0 specs: add the missing /flavors entry, restoring parity
-    with v2_1.
+    with v2_1, and the uid field both getfromid entries were missing.
+    Without the uid, setup_api_methods_for_service() died at load time on
+    any deployment running API version 2.0.
   - image_from_uid(), server_from_uid() and the spec-generated getfromid
     methods now check the id against the RFC 4122 8-4-4-4-12 hex format and
     die with a clear message. A malformed id used to reach OpenStack and
@@ -62,9 +64,13 @@ OpenStack::MetaAPI Changes
   - Add GitHub Actions CI across Linux, macOS and Windows; drop .travis.yml.
     The matrix now starts at Perl 5.14, the floor set by OpenStack::Client.
   - Do not ship CLAUDE.md, .claude/ or local/ in the distribution.
+  - Point the bugtracker and repository metadata at the cpan-authors org.
+  - Add AI_POLICY.md and SECURITY.md.
+  - Routes.pm: drop an unused YAML::XS import. create_vm(): drop a
+    duplicated status check and initialise the readiness flag explicitly.
   - Many new tests: Routes, the API factory, DataAsYaml, the Listable and
-    GetFromId roles, spec field names, root_uri, UUID validation, and the
-    create_vm error and no-floating-IP paths.
+    GetFromId roles, spec field names, spec integrity, root_uri, UUID
+    validation, and the create_vm error and no-floating-IP paths.
 
 0.003 2019-04-29
   - add Test::MockModule requirement version for 'redefine'
