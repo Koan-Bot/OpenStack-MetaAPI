@@ -25,7 +25,7 @@ my $api = get_api_object(use_env => 0);
 ok $api, "got one api object" or die;
 
 my $IMAGE_UID  = '170fafa5-1329-44a3-9c27-9bb77b77206d';
-my $SERVER_UID = 'aaaaa-bbbb-ccccc-dddd';
+my $SERVER_UID = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
 
 mock_get_request(
     'http://127.0.0.1:8774/v2.1/flavors',
@@ -144,7 +144,7 @@ sub json_create_server {
     return <<'JSON';
 {
     "server" : {
-        "id": "aaaaa-bbbb-ccccc-dddd",
+        "id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
         "name" : "vm-error-test"
     }
 }

@@ -80,7 +80,7 @@ ok $api, "got one api object" or die;
     );
 
     mock_get_request(
-        'http://127.0.0.1:8774/v2.1/servers/aaaaa-bbbb-ccccc-dddd',
+        'http://127.0.0.1:8774/v2.1/servers/aaaaabbb-bccc-cddd-d000-000000000000',
         application_json(json_for_server()),
     );
 
@@ -99,7 +99,7 @@ ok $api, "got one api object" or die;
 
     my $iteration = 0;
     mock_get_request(
-        'http://127.0.0.1:8774/v2.1/servers/aaaaa-bbbb-ccccc-dddd',
+        'http://127.0.0.1:8774/v2.1/servers/aaaaabbb-bccc-cddd-d000-000000000000',
         sub {
             my ($request) = @_;
             note "checking server state ", ++$iteration;
@@ -115,7 +115,7 @@ ok $api, "got one api object" or die;
 
             # then the server is active
 
-            die "Too many calls to servers/aaaaa-bbbb-ccccc-dddd"
+            die "Too many calls to servers/aaaaabbb-bccc-cddd-d000-000000000000"
               if $iteration >= 10;
 
             return {
@@ -139,12 +139,12 @@ ok $api, "got one api object" or die;
     );
 
     mock_get_request(
-        'http://127.0.0.1:9696/v2.0/ports?device_id=aaaaa-bbbb-ccccc-dddd',
+        'http://127.0.0.1:9696/v2.0/ports?device_id=aaaaabbb-bccc-cddd-d000-000000000000',
         application_json(json_for_ports_device_id()),
     );
 
     mock_put_request(
-        'http://127.0.0.1:9696/v2.0/floatingips/ffffff-000000-fffff-111111-7777777',
+        'http://127.0.0.1:9696/v2.0/floatingips/ffffff00-0000-ffff-1111-117777777777',
         application_json(json_for_put_floatingips()),
     );
 
@@ -153,7 +153,7 @@ ok $api, "got one api object" or die;
     is $vm => hash {
         field id                  => '33748c23-38dd-4f70-b774-522fc69e7b67';
         field floating_ip_address => '10.1.2.3';
-        field floating_ip_id      => 'ffffff-000000-fffff-111111-7777777';
+        field floating_ip_id      => 'ffffff00-0000-ffff-1111-117777777777';
         field status              => 'ACTIVE';
         field user_id             => 'fake';
 
@@ -233,7 +233,7 @@ sub json_for_ports_device_id {
             "created_at": "2016-03-08T20:19:41",
             "data_plane_status": null,
             "description": "",
-            "device_id": "aaaaa-bbbb-ccccc-dddd",
+            "device_id": "aaaaabbb-bccc-cddd-d000-000000000000",
             "device_owner": "network:router_gateway",
             "dns_assignment": {
                 "hostname": "myport",
@@ -284,7 +284,7 @@ sub json_for_put_floatingips {
         "fixed_ip_address": "172.24.4.228",
         "floating_ip_address": "10.1.2.3",
         "floating_network_id": "376da547-b977-4cfe-9cba-275c80debf57",
-        "id": "ffffff-000000-fffff-111111-7777777",
+        "id": "ffffff00-0000-ffff-1111-117777777777",
         "description": "floating ip for testing",
         "dns_domain": "my-domain.org.",
         "dns_name": "myfip",
@@ -318,7 +318,7 @@ sub json_for_post_floatingips {
         "fixed_ip_address": "172.24.4.228",
         "floating_ip_address": "10.1.2.3",
         "floating_network_id": "376da547-b977-4cfe-9cba-275c80debf57",
-        "id": "ffffff-000000-fffff-111111-7777777",
+        "id": "ffffff00-0000-ffff-1111-117777777777",
         "port_id": "ce705c24-c1ef-408a-bda3-7bbd946164ab",
         "router_id": "d23abc8d-2991-4a55-ba98-2aaea84cc72f",
         "status": "ACTIVE",
@@ -444,7 +444,7 @@ sub json_create_server {
     return <<'JSON';
 {
     "server" : {
-        "id": "aaaaa-bbbb-ccccc-dddd",
+        "id": "aaaaabbb-bccc-cddd-d000-000000000000",
         "accessIPv4": "1.2.3.4",
         "accessIPv6": "80fe::",
         "name" : "new-server-test",

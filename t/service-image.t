@@ -46,7 +46,7 @@ ok $api, "got one api object" or die;
         'created_at'       => '2019-04-10T20:23:09Z',
         'disk_format'      => 'raw',
         'file'         => '/v2/images/6056cbf415fd5f8c223c8a69341e44ee/file',
-        'id'           => 'b763530-fe64d-2116b5-c627a7-7f0cf71b',
+        'id'           => 'b7635300-fe6d-2116-c627-7f0cf71b0000',
         'min_disk'     => 0,
         'min_ram'      => 0,
         'name'         => 'MyImage',
@@ -104,6 +104,26 @@ ok $api, "got one api object" or die;
 
 }
 
+{
+    note "Testing image_from_uid rejects malformed UUIDs";
+
+    like dies { $api->image_from_uid('not-a-uuid') },
+        qr/Invalid UUID format/,
+        "image_from_uid rejects non-UUID string";
+
+    like dies { $api->image_from_uid('aaa-bbb-ccc') },
+        qr/Invalid UUID format/,
+        "image_from_uid rejects too-short hex-dash string";
+
+    like dies { $api->image_from_uid('170fafa513294a3c9c279bb77b77206d') },
+        qr/Invalid UUID format/,
+        "image_from_uid rejects UUID without dashes";
+
+    like dies { $api->image_from_uid('170fafa5-1329-44a3-9c27') },
+        qr/Invalid UUID format/,
+        "image_from_uid rejects truncated UUID";
+}
+
 done_testing;
 
 sub json_for_image {
@@ -112,7 +132,7 @@ sub json_for_image {
     return <<'JSON';
 {
    "min_ram" : 0,
-   "id" : "b763530-fe64d-2116b5-c627a7-7f0cf71b",
+   "id" : "b7635300-fe6d-2116-c627-7f0cf71b0000",
    "os_version" : "7",
    "created_at" : "2019-04-10T20:23:09Z",
    "os_arch" : "x86_64",
