@@ -119,10 +119,6 @@ ok $api, "got one api object" or die;
         qr/Invalid UUID format/,
         "server_from_uid rejects too-short hex-dash string";
 
-    like dies { $api->server_from_uid('33748c2338dd4f70b774522fc69e7b67') },
-        qr/Invalid UUID format/,
-        "server_from_uid rejects UUID without dashes";
-
     like dies { $api->server_from_uid('33748c23-38dd-4f70-b774') },
         qr/Invalid UUID format/,
         "server_from_uid rejects truncated UUID";
@@ -130,6 +126,26 @@ ok $api, "got one api object" or die;
     like dies { $api->server_from_uid('ZZZZZZZZ-ZZZZ-ZZZZ-ZZZZ-ZZZZZZZZZZZZ') },
         qr/Invalid UUID format/,
         "server_from_uid rejects non-hex characters";
+}
+
+{
+    note "Testing server_from_uid accepts an id returned by servers()";
+
+    # servers() hands out undashed 32-hex ids; feeding one straight back in --
+    # which is exactly what delete_server does -- must reach the API.
+    my $server = $api->servers(name => 'server two');
+
+    mock_get_request(
+        'http://127.0.0.1:8774/v2.1/servers/' . $server->{id},
+        application_json(json_for_server()),
+    );
+
+    ok $api->server_from_uid($server->{id}),
+      "server_from_uid accepts the undashed 32-hex id servers() returned";
+
+    is last_http_request(),
+      "GET http://127.0.0.1:8774/v2.1/servers/433bef2eda384218df1f3fe032d3c6cc",
+      "the undashed id was sent through untouched";
 }
 
 done_testing;

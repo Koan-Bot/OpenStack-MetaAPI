@@ -115,13 +115,28 @@ ok $api, "got one api object" or die;
         qr/Invalid UUID format/,
         "image_from_uid rejects too-short hex-dash string";
 
-    like dies { $api->image_from_uid('170fafa513294a3c9c279bb77b77206d') },
-        qr/Invalid UUID format/,
-        "image_from_uid rejects UUID without dashes";
-
     like dies { $api->image_from_uid('170fafa5-1329-44a3-9c27') },
         qr/Invalid UUID format/,
         "image_from_uid rejects truncated UUID";
+}
+
+{
+    note "Testing image_from_uid accepts an id returned by image_from_name";
+
+    # Glance ids come back undashed too, so an id this library handed out has
+    # to be accepted back unchanged.
+    my $uid = '2ad246436b89fa939e3ac435f268d8e9';
+
+    mock_get_request(
+        "http://127.0.0.1:9292/v2/images/$uid",
+        application_json(json_for_image()),
+    );
+
+    ok $api->image_from_uid($uid),
+      "image_from_uid accepts the undashed 32-hex id image_from_name returned";
+
+    is last_http_request(), "GET http://127.0.0.1:9292/v2/images/$uid",
+      "the undashed id was sent through untouched";
 }
 
 done_testing;

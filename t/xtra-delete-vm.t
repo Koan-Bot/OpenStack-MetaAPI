@@ -26,6 +26,10 @@ my $api = get_api_object(use_env => 0);
 ok $api, "got one api object" or die;
 
 my $SERVER_NAME = 'testsuite OpenStack::MetaAPI';
+my $SERVER_UID  = '00000000-1111-2222-3333-444444444444';
+
+my $FLOATING_IP_ONE = 'ffff1111-1111-0aaa-aaaa-777777777777';
+my $FLOATING_IP_TWO = 'aaaa2222-3333-0bbb-bbbb-888888888888';
 
 {
     note "Testing Delete VM logic";
@@ -36,17 +40,17 @@ my $SERVER_NAME = 'testsuite OpenStack::MetaAPI';
     );
 
     mock_get_request(
-        'http://127.0.0.1:8774/v2.1/servers/00000000-1111-2222-3333-444444444444',
+        "http://127.0.0.1:8774/v2.1/servers/$SERVER_UID",
         application_json(json_servers_id()),
     );
 
     mock_get_request(
-        'http://127.0.0.1:9696/v2.0/ports?device_id=00000000-1111-2222-3333-444444444444',
+        "http://127.0.0.1:9696/v2.0/ports?device_id=$SERVER_UID",
         application_json(json_for_ports_device_id_unused()),
     );
 
     mock_delete_request(
-        'http://127.0.0.1:8774/v2.1/servers/00000000-1111-2222-3333-444444444444',
+        "http://127.0.0.1:8774/v2.1/servers/$SERVER_UID",
         txt_plain("ok delete server"),
     );
 
@@ -57,7 +61,7 @@ my $SERVER_NAME = 'testsuite OpenStack::MetaAPI';
     }
 
     mock_get_request(
-        'http://127.0.0.1:9696/v2.0/ports?device_id=00000000-1111-2222-3333-444444444444',
+        "http://127.0.0.1:9696/v2.0/ports?device_id=$SERVER_UID",
         application_json(json_for_ports_device_id_used()),
     );
 
@@ -88,12 +92,12 @@ my $SERVER_NAME = 'testsuite OpenStack::MetaAPI';
     );
 
     mock_get_request(
-        'http://127.0.0.1:8774/v2.1/servers/000000-1111-22222-33333-444444',
+        "http://127.0.0.1:8774/v2.1/servers/$SERVER_UID",
         application_json(json_servers_id()),
     );
 
     mock_get_request(
-        'http://127.0.0.1:9696/v2.0/ports?device_id=000000-1111-22222-33333-444444',
+        "http://127.0.0.1:9696/v2.0/ports?device_id=$SERVER_UID",
         application_json(json_for_ports_multi_homed()),
     );
 
@@ -102,19 +106,31 @@ my $SERVER_NAME = 'testsuite OpenStack::MetaAPI';
         application_json(json_for_floatingips_multi()),
     );
 
+    # The mock registry is keyed by method + uri and shared by the whole file,
+    # so recording the deletes is the only way to tell "both floating ips went"
+    # apart from "an earlier block's single-port mock answered instead".
     my @deleted_floatingips;
+    my $record_delete = sub {
+        my ($id, $msg) = @_;
+
+        return sub {
+            push @deleted_floatingips, $id;
+            return {code => 201, msg => "Mocked Request", %{txt_plain($msg)}};
+        };
+    };
+
     mock_delete_request(
-        'http://127.0.0.1:9696/v2.0/floatingips/ffff-1111-00000-aaaaaaa-777777',
-        txt_plain("ok delete floating ip 1"),
+        "http://127.0.0.1:9696/v2.0/floatingips/$FLOATING_IP_ONE",
+        $record_delete->($FLOATING_IP_ONE, "ok delete floating ip 1"),
     );
 
     mock_delete_request(
-        'http://127.0.0.1:9696/v2.0/floatingips/aaaa-2222-33333-bbbbbbb-888888',
-        txt_plain("ok delete floating ip 2"),
+        "http://127.0.0.1:9696/v2.0/floatingips/$FLOATING_IP_TWO",
+        $record_delete->($FLOATING_IP_TWO, "ok delete floating ip 2"),
     );
 
     mock_delete_request(
-        'http://127.0.0.1:8774/v2.1/servers/000000-1111-22222-33333-444444',
+        "http://127.0.0.1:8774/v2.1/servers/$SERVER_UID",
         txt_plain("ok delete server"),
     );
 
@@ -122,6 +138,10 @@ my $SERVER_NAME = 'testsuite OpenStack::MetaAPI';
         my ($server) = $api->servers(name => $SERVER_NAME);
         is $api->delete_server($server->{id}), "ok delete server",
           "delete a multi-homed server cleans up all floating ips";
+
+        is [sort @deleted_floatingips],
+          [sort($FLOATING_IP_ONE, $FLOATING_IP_TWO)],
+          "both floating ips attached to the multi-homed server were deleted";
     }
 
 }
@@ -274,7 +294,7 @@ JSON
 }
 
 sub json_for_ports_multi_homed {
-    return <<'JSON';
+    my $json = <<'JSON';
 {
     "ports": [
         {
@@ -282,7 +302,7 @@ sub json_for_ports_multi_homed {
             "allowed_address_pairs": [],
             "created_at": "2016-03-08T20:19:41",
             "description": "",
-            "device_id": "000000-1111-22222-33333-444444",
+            "device_id": "~UID~",
             "device_owner": "compute:nova",
             "fixed_ips": [
                 {
@@ -301,7 +321,7 @@ sub json_for_ports_multi_homed {
             "allowed_address_pairs": [],
             "created_at": "2016-03-08T20:20:41",
             "description": "",
-            "device_id": "000000-1111-22222-33333-444444",
+            "device_id": "~UID~",
             "device_owner": "compute:nova",
             "fixed_ips": [
                 {
@@ -309,38 +329,47 @@ sub json_for_ports_multi_homed {
                     "subnet_id": "119ca251-1c9d-5b78-a6c6-1e3f29a72b73"
                 }
             ],
-            "id": "e91c2b4c-5fd2-50g4-a63f-2f3bc8192e9c",
+            "id": "e91c2b4c-5fd2-5094-a63f-2f3bc8192e9c",
             "mac_address": "fa:16:3e:a2:4c:f1",
             "name": "",
-            "network_id": "81d130e4-c812-56ce-a1f1-7833g24b35d4",
+            "network_id": "81d130e4-c812-56ce-a1f1-7833024b35d4",
             "status": "ACTIVE"
         }
     ]
 }
 JSON
+
+    $json =~ s{~UID~}{$SERVER_UID}g;
+
+    return $json;
 }
 
 sub json_for_floatingips_multi {
-    return <<'JSON';
+    my $json = <<'JSON';
 {
     "floatingips": [
         {
-            "id": "ffff-1111-00000-aaaaaaa-777777",
+            "id": "~FIP1~",
             "floating_ip_address": "172.24.4.228",
             "floating_network_id": "376da547-b977-4cfe-9cba-275c80debf57",
             "port_id": "d80b1a3b-4fc1-49f3-952e-1e2ab7081d8b",
             "status": "ACTIVE"
         },
         {
-            "id": "aaaa-2222-33333-bbbbbbb-888888",
+            "id": "~FIP2~",
             "floating_ip_address": "172.24.4.229",
             "floating_network_id": "376da547-b977-4cfe-9cba-275c80debf57",
-            "port_id": "e91c2b4c-5fd2-50g4-a63f-2f3bc8192e9c",
+            "port_id": "e91c2b4c-5fd2-5094-a63f-2f3bc8192e9c",
             "status": "ACTIVE"
         }
     ]
 }
 JSON
+
+    $json =~ s{~FIP1~}{$FLOATING_IP_ONE};
+    $json =~ s{~FIP2~}{$FLOATING_IP_TWO};
+
+    return $json;
 }
 
 sub json_servers_id {

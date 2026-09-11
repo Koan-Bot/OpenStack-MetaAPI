@@ -59,8 +59,14 @@ sub image_from_uid {
     my ($self, $uid) = @_;
 
     die "image_from_uid: uid is required" unless defined $uid;
-    die "Invalid UUID format '$uid' - expected 8-4-4-4-12 hex format"
-        unless $uid =~ m{^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$}i;
+
+    # Glance answers with both shapes -- the dashed 8-4-4-4-12 form and the
+    # undashed 32 hex digits (image_from_name returns the latter) -- so an id
+    # this library handed out has to be accepted back unchanged.
+    die
+      "Invalid UUID format '$uid' - expected 8-4-4-4-12 hex format or 32 hex digits"
+      unless $uid
+      =~ m{^(?:[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}|[a-f0-9]{32})$}i;
 
     my $uri = $self->root_uri('/images/' . $uid);
 
