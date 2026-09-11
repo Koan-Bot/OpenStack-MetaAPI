@@ -158,12 +158,23 @@ sub create_vm {
 
         $server_status = $self->server_from_uid($server_uid);
 
-        if (   ref $server_status
-            && $server_status->{status}
-            && $server_status->{status}
-            && lc($server_status->{status}) eq 'active') {
-            $server_is_ready = 1;
-            last;
+        if (ref $server_status && $server_status->{status}) {
+            my $status = lc($server_status->{status});
+
+            if ($status eq 'active') {
+                $server_is_ready = 1;
+                last;
+            }
+
+            # Fail fast on ERROR — no point waiting out the timeout.
+            if ($status eq 'error') {
+                my $fault = $server_status->{fault} || {};
+                my $msg
+                  = "Failed to create server $server_uid: status=ERROR";
+                $msg .= " code=$fault->{code}"       if $fault->{code};
+                $msg .= " message=$fault->{message}" if $fault->{message};
+                die "$msg\n";
+            }
         }
         sleep $self->create_loop_sleep if $self->create_loop_sleep;
     }
