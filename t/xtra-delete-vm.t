@@ -79,6 +79,53 @@ my $SERVER_NAME = 'testsuite OpenStack::MetaAPI';
 
 }
 
+{
+    note "Testing Delete VM with multiple ports (multi-homed)";
+
+    mock_get_request(
+        'http://127.0.0.1:8774/v2.1/servers',
+        application_json(json_servers()),
+    );
+
+    mock_get_request(
+        'http://127.0.0.1:8774/v2.1/servers/000000-1111-22222-33333-444444',
+        application_json(json_servers_id()),
+    );
+
+    mock_get_request(
+        'http://127.0.0.1:9696/v2.0/ports?device_id=000000-1111-22222-33333-444444',
+        application_json(json_for_ports_multi_homed()),
+    );
+
+    mock_get_request(
+        'http://127.0.0.1:9696/v2.0/floatingips',
+        application_json(json_for_floatingips_multi()),
+    );
+
+    my @deleted_floatingips;
+    mock_delete_request(
+        'http://127.0.0.1:9696/v2.0/floatingips/ffff-1111-00000-aaaaaaa-777777',
+        txt_plain("ok delete floating ip 1"),
+    );
+
+    mock_delete_request(
+        'http://127.0.0.1:9696/v2.0/floatingips/aaaa-2222-33333-bbbbbbb-888888',
+        txt_plain("ok delete floating ip 2"),
+    );
+
+    mock_delete_request(
+        'http://127.0.0.1:8774/v2.1/servers/000000-1111-22222-33333-444444',
+        txt_plain("ok delete server"),
+    );
+
+    {
+        my ($server) = $api->servers(name => $SERVER_NAME);
+        is $api->delete_server($server->{id}), "ok delete server",
+          "delete a multi-homed server cleans up all floating ips";
+    }
+
+}
+
 done_testing;
 
 sub json_for_floatingips {
@@ -220,6 +267,76 @@ sub json_for_ports_device_id_unused {
             "qos_policy_id": "29d5e02e-d5ab-4929-bee4-4a9fc12e22ae",
             "port_security_enabled": false,
             "uplink_status_propagation": false
+        }
+    ]
+}
+JSON
+}
+
+sub json_for_ports_multi_homed {
+    return <<'JSON';
+{
+    "ports": [
+        {
+            "admin_state_up": true,
+            "allowed_address_pairs": [],
+            "created_at": "2016-03-08T20:19:41",
+            "description": "",
+            "device_id": "000000-1111-22222-33333-444444",
+            "device_owner": "compute:nova",
+            "fixed_ips": [
+                {
+                    "ip_address": "10.0.0.5",
+                    "subnet_id": "008ba151-0b8c-4a67-98b5-0d2b87666062"
+                }
+            ],
+            "id": "d80b1a3b-4fc1-49f3-952e-1e2ab7081d8b",
+            "mac_address": "fa:16:3e:58:42:ed",
+            "name": "",
+            "network_id": "70c1db1f-b701-45bd-96e0-a313ee3430b3",
+            "status": "ACTIVE"
+        },
+        {
+            "admin_state_up": true,
+            "allowed_address_pairs": [],
+            "created_at": "2016-03-08T20:20:41",
+            "description": "",
+            "device_id": "000000-1111-22222-33333-444444",
+            "device_owner": "compute:nova",
+            "fixed_ips": [
+                {
+                    "ip_address": "192.168.1.10",
+                    "subnet_id": "119ca251-1c9d-5b78-a6c6-1e3f29a72b73"
+                }
+            ],
+            "id": "e91c2b4c-5fd2-50g4-a63f-2f3bc8192e9c",
+            "mac_address": "fa:16:3e:a2:4c:f1",
+            "name": "",
+            "network_id": "81d130e4-c812-56ce-a1f1-7833g24b35d4",
+            "status": "ACTIVE"
+        }
+    ]
+}
+JSON
+}
+
+sub json_for_floatingips_multi {
+    return <<'JSON';
+{
+    "floatingips": [
+        {
+            "id": "ffff-1111-00000-aaaaaaa-777777",
+            "floating_ip_address": "172.24.4.228",
+            "floating_network_id": "376da547-b977-4cfe-9cba-275c80debf57",
+            "port_id": "d80b1a3b-4fc1-49f3-952e-1e2ab7081d8b",
+            "status": "ACTIVE"
+        },
+        {
+            "id": "aaaa-2222-33333-bbbbbbb-888888",
+            "floating_ip_address": "172.24.4.229",
+            "floating_network_id": "376da547-b977-4cfe-9cba-275c80debf57",
+            "port_id": "e91c2b4c-5fd2-50g4-a63f-2f3bc8192e9c",
+            "status": "ACTIVE"
         }
     ]
 }

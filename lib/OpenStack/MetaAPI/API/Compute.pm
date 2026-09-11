@@ -26,13 +26,12 @@ sub delete_server {
 
     my $api = $self->api;
     {
-# delete floating ip for device [maybe provide its own helper at the main level of API]
-        my $port_for_device = $api->ports(device_id => $uid);
-        if ($port_for_device && $port_for_device->{id}) {
+# delete floating ips for all ports on this device (supports multi-homed VMs)
+        my @ports_for_device = $api->ports(device_id => $uid);
+        for my $port (@ports_for_device) {
+            next unless ref $port && $port->{id};
 
-            my $port_id = $port_for_device->{id};
-            my $floatingip = $api->floatingips(port_id => $port_id);
-
+            my $floatingip = $api->floatingips(port_id => $port->{id});
             if ($floatingip && $floatingip->{id}) {
                 $api->delete_floatingip($floatingip->{id});
             }
